@@ -12,6 +12,25 @@ if vxlib#plugin#StopLoading('#au#vxlib#pluggen')
    finish
 endif
 
+" TODO: Each plugin can have its own dir structure. Each plugin can be configured separately.
+"    1. find all autoload directories
+"    2. treat every xxx/autoload directory separately
+"       - process only the files in xxx/autoload
+"       - if it contains vxplugins, generate code in xxx/plugin
+"       - check that any of the plugins is newer than the generated file and
+"       the generated file is writeable
+
+" TODO: Analyze the use cases and change startup behaviour
+"    1. The user has vxlib and uses VxRegen
+"       - the /plugin files are created and used
+"    2. The user has vxlib and doesn't use VxRegen
+"       - the /vxlibautogen/plugin files are loaded by /plugin/vxlib.vim
+"    3. The user doesn't have vxlib but uses plugins prepared with VxRegen
+"       - the generator should create code that doesn't add dependencies on
+"       vxlib .. code should be copied from vxlib/plugin.vim to the generated
+"       files.
+
+
 function! s:FindConfig(createDir)
    let locs = split(globpath(&rtp, 'plugin/vxplugin.conf'), "\n")
    if len(locs) > 0
