@@ -202,11 +202,34 @@ class Distributor:
 
       return self.new_files[fname] 
 
-   def distributeOrgFuncs(self):
+   def distributeFuncs_Org1(self):
       # Ad hoc distribution
       for f in self.getFunctions(None):
          newf = None
-         if f.private:
+         if f.name == "$$global":
+            newf = "new_" + f.vimfile.name
+         elif f.private:
+            newf = "autoload/org/core.vim"
+         else:
+            newf = "plugin/org.vim"
+
+         f.new_file = self.getOutputFile(newf)
+         f.new_file.functions.append(f)
+         f.computeNewName()
+
+      if 1:
+         for name,vf in self.new_files.items():
+            print "-----", name
+            for f in vf.functions:
+               print "%30s\t%s" % (f.name, f.new_name)
+
+   def distributeFuncs_Org2(self):
+      # Ad hoc distribution
+      for f in self.getFunctions(None):
+         newf = None
+         if f.name == "$$global":
+            newf = "new_" + f.vimfile.name
+         elif f.private:
             if f.name.endswith("SID"):
                newf = "new_" + f.vimfile.name
             elif f.name.lower().find("random") >= 0:
@@ -227,8 +250,6 @@ class Distributor:
                newf = "autoload/org/export.vim"
             else:
                newf = "autoload/org/core.vim"
-         elif f.name == "$$global":
-            newf = "new_" + f.vimfile.name
          else:
             newf = "plugin/org.vim"
 
@@ -264,7 +285,6 @@ class Distributor:
       flines = func.new_file.lines
       name = mo.group(1)
       l = "function! %s %s" % (func.new_name, mo.group(2))
-      print l
       flines.append(l)
       mo = None
       while mo == None:
@@ -305,7 +325,7 @@ def Test():
    D = Distributor()
    D.addFile("org.vim")
    D.makeCallGraph()
-   D.distributeOrgFuncs()
+   D.distributeFuncs_Org1()
    D.copyFunctions()
    D.writeNewFiles()
    return
