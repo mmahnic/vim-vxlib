@@ -20,7 +20,7 @@ let s:has_tlibinput = exists('g:loaded_tlib')
 
 " supported modes: vimuiex, popup, choice
 " (Is it possible to use :emenu here? it seems that I need to map-<expr>, so NO)
-let s:BackendOrder = ['vimuiex', 'tlib', 'popup', 'choice'] " 'emenu'
+let s:BackendOrder = ['popuplist', 'vimuiex', 'tlib', 'popup', 'choice'] " 'emenu'
 " =========================================================================== 
 
 function! s:CheckExtraSettings()
@@ -66,6 +66,7 @@ function! vxlib#menu#DoVimMenu(menuPath, backend)
 
    let cando = {}
    let cando[mback] = 0
+   let cando['popuplist'] = has('popuplist') " && has('gui_running') && 0  TODO: it doesnt work, yet
    let cando['vimuiex'] = s:has_vxtextmenu && has('menu') && has('python') 
             \ && (!has('gui_running') || has('python_screen'))
    let cando['popup'] = has('menu') && has('gui_running')
@@ -77,6 +78,8 @@ function! vxlib#menu#DoVimMenu(menuPath, backend)
 
    if mback == ''
       return
+   elseif mback == 'popuplist'
+      call popuplist(vimmode . 'menu', name, { 'mode': 'shortcut' } )
    elseif mback == 'vimuiex'
       call vimuiex#vxtextmenu#VxTextMenu(name, vimmode)
       " exec vimmode . 'unmenu ' . name
