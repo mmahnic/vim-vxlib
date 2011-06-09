@@ -66,7 +66,7 @@ function! vxlib#menu#DoVimMenu(menuPath, backend)
 
    let cando = {}
    let cando[mback] = 0
-   let cando['popuplist'] = has('popuplist') " && has('gui_running') && 0  TODO: it doesnt work, yet
+   let cando['popuplist'] = has('popuplist') && has('menu')
    let cando['vimuiex'] = s:has_vxtextmenu && has('menu') && has('python') 
             \ && (!has('gui_running') || has('python_screen'))
    let cando['popup'] = has('menu') && has('gui_running')

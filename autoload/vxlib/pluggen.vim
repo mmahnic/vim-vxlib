@@ -1,4 +1,4 @@
-" vim:set fileencoding=utf-8 sw=3 ts=3 et:vim
+" vim:set fileencoding=utf-8 sw=3 ts=8 et:vim
 "
 " Author: Marko Mahnič
 " Created: April 2010
@@ -60,6 +60,7 @@ function! vxlib#pluggen#GeneratePlugins()
    if len(locs) < 1
       return
    endif
+   let generator = locs[0]
 
    let plugfile = s:FindConfig(1)
    if bufexists(plugfile)
@@ -71,14 +72,27 @@ function! vxlib#pluggen#GeneratePlugins()
       silent exec 'buffer ' . curbuf
    endif
 
-   let generator = locs[0]
-   let locs = split(globpath(&rtp, 'plugin'), "\n")
-   let plugins = locs[0]
-   let locs = split(globpath(&rtp, 'autoload'), "\n")
-   let cmd = generator . ' ' . join(locs, ' ') .
-            \  ' -o ' . plugins . '/_vimuiex_autogen_.vim' .
-            \  ' --update --config ' . plugins . '/vxplugin.conf'
-   silent exec '!python ' . cmd
+   if 0
+      " NOT YET
+      " For every autoload dir in rtp create a file in the matching plugin dir.
+      " Ignore directories/files that can't be modified.
+      let locs = split(globpath(&rtp, 'autoload'), "\n")
+      for auloc in locs
+         let plloc = fnamemodify(auloc, ":h")
+         let cmd = generator . ' ' . auloc .
+                  \  ' -o ' . plloc . '/plugin/_vxplug_autogen_.vim' .
+                  \  ' --update --config ' . plugfile
+         silent exec '!python ' . cmd
+      endfor
+   else
+      let locs = split(globpath(&rtp, 'plugin'), "\n")
+      let plugins = locs[0]
+      let locs = split(globpath(&rtp, 'autoload'), "\n")
+      let cmd = generator . ' ' . join(locs, ' ') .
+               \  ' -o ' . plugins . '/_vimuiex_autogen_.vim' .
+               \  ' --update --config ' . plugins . '/vxplugin.conf'
+      silent exec '!python ' . cmd
+   endif
    echom 'Plugins regenerated.'
    echom 'You must restart Vim for the changes to take effect.'
 endfunc
