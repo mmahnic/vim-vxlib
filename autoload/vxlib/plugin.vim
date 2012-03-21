@@ -121,6 +121,11 @@ function! vxlib#plugin#SetLoaded(idPlugin, markLoaded)
    let g:VxPluginLoaded[a:idPlugin] = a:markLoaded
 endfunc
 
+function! vxlib#plugin#SetLoadFailed(idPlugin, message)
+   let g:VxPluginLoaded[a:idPlugin] = -9
+   let g:VxPluginErrors[a:idPlugin] = a:message
+endfunc
+
 " Check if the plugin 'idPlugin' is loaded.
 " If the plugin isn't marked as loaded, it will be marked as such.
 function! s:CheckAndSetLoaded(idPlugin, value)
