@@ -72,17 +72,16 @@ function! vxlib#pluggen#GeneratePlugins()
       silent exec 'buffer ' . curbuf
    endif
 
-   if 0
-      " NOT YET
+   if 1
       " For every autoload dir in rtp create a file in the matching plugin dir.
       " Ignore directories/files that can't be modified.
       let locs = split(globpath(&rtp, 'autoload'), "\n")
       for auloc in locs
          let plloc = fnamemodify(auloc, ":h")
          let cmd = generator . ' ' . auloc .
-                  \  ' -o ' . plloc . '/plugin/_vxplug_autogen_.vim' .
+                  \  ' -o ' . plloc . '/plugin/_vxautogen_.vim' .
                   \  ' --update --config ' . plugfile
-         silent exec '!python ' . cmd
+         exec '!python ' . cmd
       endfor
    else
       let locs = split(globpath(&rtp, 'plugin'), "\n")

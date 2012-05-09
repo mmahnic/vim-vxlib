@@ -233,7 +233,30 @@ command VxStatus call s:VxStatus()
 " Special case: can't use #StopLoading before it is created.
 call vxlib#plugin#SetLoaded('#au#vxlib#plugin', 1)
 
+" Report exceptions thrown during startup in generated plugins.
+function! vxlib#plugin#Exception(script, throwpoint, exception, plugid, loadstatus)
+   if a:loadstatus != 0
+      call vxlib#plugin#SetLoaded(a:plugid, a:loadstatus)
+   endif
+   if !exists('g:vxlib_exception_list')
+      let g:vxlib_exception_list = []
+   endif
+   let line = matchstr(a:throwpoint, ',\s*\zsline\s\+\d\+')
+   let file = matchstr(a:throwpoint, '\s*.\{-}\s*\ze,')
+   call add(g:vxlib_exception_list,  '*** Error in generated plugin "' . a:plugid . '":')
+   call add(g:vxlib_exception_list,  '  - ' . a:exception)
+   if file =~ '^function '
+       call add(g:vxlib_exception_list, '  - ' . a:script)
+       call add(g:vxlib_exception_list, '  - ' . a:throwpoint)
+   else
+       let file = fnamemodify(file, ':p:~')
+       call add(g:vxlib_exception_list, '  - ' . file . ', ' . line)
+   endif
+   let g:VxPluginErrors[a:plugid] = a:exception
+endfunc
 
+" Checks for the existence of normal plugins
+" Note: atm it doesn't work (well) with plugin-generator-generated plugins
 function! vxlib#plugin#PluginExists(name, plugfile)
    try
       let knp = g:VxKnownPlugins[a:name]
@@ -255,15 +278,4 @@ function! vxlib#plugin#PluginExists(name, plugfile)
    return 0
 endfunc
 
-" =========================================================================== 
-" Global Initialization - Processed by Plugin Code Generator
-" =========================================================================== 
-finish
 
-" Checks for the existence of normal plugins
-" Note: atm it doesn't work (well) with plugin-generator-generated plugins
-" <PLUGINFUNCTION id="vxlib#pluginexists" name="PluginExists">
-function! s:PluginExists(name, plugfile)
-   return vxlib#plugin#PluginExists(a:name, a:plugfile)
-endfunc
-" </PLUGINFUNCTION>
