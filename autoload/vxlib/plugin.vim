@@ -5,10 +5,11 @@
 " License: GPL (http://www.gnu.org/copyleft/gpl.html)
 " This program comes with ABSOLUTELY NO WARRANTY.
 
-if exists('s:vxlib_plugin_loaded')
+let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
+if get(g:loadedPlugAuto, 'vxlib_plugin', 0)
    finish
 endif
-let s:vxlib_plugin_loaded = 1
+let g:loadedPlugAuto.vxlib_plugin = 1
 
 " Use in a script that needs SID/SNR.
 " Example: 
@@ -141,6 +142,7 @@ endfunc
 "
 " Used as a script loading guard: if StopLoading(id) | finish | endif
 "
+" TODO: Stop using vxlib#plugin#StopLoading in scripts. Use loadedPlug and loadedPlugAuto.
 function! vxlib#plugin#StopLoading(idPlugin)
    return s:CheckAndSetLoaded(a:idPlugin, 1)
 endfunc

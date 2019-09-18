@@ -15,9 +15,11 @@
 "    EOF
 " endfunc
 
-if vxlib#plugin#StopLoading('#au#vxlib#python')
+let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
+if get(g:loadedPlugAuto, 'vxlib_python', 0)
    finish
 endif
+let g:loadedPlugAuto.vxlib_python = 1
 
 " Add ~/.vim/modpython to python search path.
 " Vim-python modules should be installed in ~/.vim/modpython

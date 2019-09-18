@@ -5,9 +5,11 @@
 " License: GPL (http://www.gnu.org/copyleft/gpl.html)
 " This program comes with ABSOLUTELY NO WARRANTY.
 
-if vxlib#plugin#StopLoading('#au#vxlib#dlg')
+let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
+if get(g:loadedPlugAuto, 'vxlib_dlg', 0)
    finish
 endif
+let g:loadedPlugAuto.vxlib_dlg = 1
 
 function! s:CompareNoCase(a, b)
    let a=tolower(a:a)

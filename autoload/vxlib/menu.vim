@@ -6,9 +6,11 @@
 " License: GPL (http://www.gnu.org/copyleft/gpl.html)
 " This program comes with ABSOLUTELY NO WARRANTY.
 
-if vxlib#plugin#StopLoading('#au#vxlib#menu')
+let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
+if get(g:loadedPlugAuto, 'vxlib_menu', 0)
    finish
 endif
+let g:loadedPlugAuto.vxlib_menu = 1
 
 " =========================================================================== 
 " Local Initialization - on autoload
