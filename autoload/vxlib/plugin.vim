@@ -5,11 +5,10 @@
 " License: GPL (http://www.gnu.org/copyleft/gpl.html)
 " This program comes with ABSOLUTELY NO WARRANTY.
 
-let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
-if get(g:loadedPlugAuto, 'vxlib_plugin', 0)
+if vxlib#load#IsLoaded( '#vxlib#plugin' )
    finish
 endif
-let g:loadedPlugAuto.vxlib_plugin = 1
+call vxlib#load#SetLoaded( '#vxlib#plugin', 1 )
 
 " Use in a script that needs SID/SNR.
 " Example: 

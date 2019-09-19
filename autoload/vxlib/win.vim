@@ -5,11 +5,10 @@
 " License: GPL (http://www.gnu.org/copyleft/gpl.html)
 " This program comes with ABSOLUTELY NO WARRANTY.
 
-let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
-if get(g:loadedPlugAuto, 'vxlib_win', 0)
+if vxlib#load#IsLoaded( '#vxlib#win' )
    finish
 endif
-let g:loadedPlugAuto.vxlib_win = 1
+call vxlib#load#SetLoaded( '#vxlib#win', 1 )
 
 function! vxlib#win#GetPreviewWinNr()
    if &previewwindow

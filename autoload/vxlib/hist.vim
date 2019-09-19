@@ -5,11 +5,10 @@
 " License: GPL (http://www.gnu.org/copyleft/gpl.html)
 " This program comes with ABSOLUTELY NO WARRANTY.
 
-let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
-if get(g:loadedPlugAuto, 'vxlib_hist', 0)
+if vxlib#load#IsLoaded( '#vxlib#hist' )
    finish
 endif
-let g:loadedPlugAuto.vxlib_hist = 1
+call vxlib#load#SetLoaded( '#vxlib#hist', 1 )
 
 function! s:Capture(aCommand, doSplit)
    redir => l:capture

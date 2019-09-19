@@ -1,7 +1,8 @@
 
-if exists("g:loaded_vxlib") && g:loaded_vxlib
+if vxlib#load#IsLoaded( 'vxlib' )
    finish
 endif
+call vxlib#load#SetLoaded( 'vxlib', 1 )
 
 " If a user wants to configure the plugins himself, he must add
 "   let g:vxlib_user_generated_plugins=1

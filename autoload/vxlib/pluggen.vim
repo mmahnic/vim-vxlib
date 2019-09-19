@@ -8,11 +8,10 @@
 " Frontend for the Vim Plugin Generator
 " The commands are defined in plugin/vxlib.vim
 
-let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
-if get(g:loadedPlugAuto, 'vxlib_pluggen', 0)
+if vxlib#load#IsLoaded( '#vxlib#pluggen' )
    finish
 endif
-let g:loadedPlugAuto.vxlib_pluggen = 1
+call vxlib#load#SetLoaded( '#vxlib#pluggen', 'DEPRECATED' )
 
 " TODO: Each plugin can have its own dir structure. Each plugin can be configured separately.
 "    1. find all autoload directories

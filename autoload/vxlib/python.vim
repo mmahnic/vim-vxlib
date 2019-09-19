@@ -15,11 +15,10 @@
 "    EOF
 " endfunc
 
-let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
-if get(g:loadedPlugAuto, 'vxlib_python', 0)
+if vxlib#load#IsLoaded( '#vxlib#python' )
    finish
 endif
-let g:loadedPlugAuto.vxlib_python = 1
+call vxlib#load#SetLoaded( '#vxlib#python', 'DEPRECATED' )
 
 " Add ~/.vim/modpython to python search path.
 " Vim-python modules should be installed in ~/.vim/modpython

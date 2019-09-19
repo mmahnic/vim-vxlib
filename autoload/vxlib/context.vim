@@ -7,11 +7,10 @@
 "
 " An infrastructure for writing context-sensitive commands.
 
-let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
-if get(g:loadedPlugAuto, 'vxlib_context', 0)
+if vxlib#load#IsLoaded( '#vxlib#context' )
    finish
 endif
-let g:loadedPlugAuto.vxlib_context = 1
+call vxlib#load#SetLoaded( '#vxlib#context', 1 )
 
 " Calculate the score for a context definition.
 " The more the context is defined, the higher the score.

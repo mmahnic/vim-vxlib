@@ -5,11 +5,10 @@
 " License: GPL (http://www.gnu.org/copyleft/gpl.html)
 " This program comes with ABSOLUTELY NO WARRANTY.
 
-let g:loadedPlugAuto = get(g:, 'loadedPlugAuto', {})
-if get(g:loadedPlugAuto, 'vxlib_cmd', 0)
+if vxlib#load#IsLoaded( '#vxlib#cmd' )
    finish
 endif
-let g:loadedPlugAuto.vxlib_cmd = 1
+call vxlib#load#SetLoaded( '#vxlib#cmd', 1 )
 
 " use in script that needs SID with: exec vxlib#cmd#MakeSID()
 function! vxlib#cmd#MakeSID()
