@@ -60,12 +60,12 @@ function! vxlib#chooser#Create( items, popup_options )
       \    current: 0,
       \    columns: 1,
       \    keymaps: [s:list_keymap]
-      \    }
+      \    },
       \ _state: #{
       \    matcher: vxlib#matcher#CreateWordMatcher(),
       \    matchertext: '',
       \    matched: [],
-      \    }
+      \    },
       \ content: a:items,
       \ SetCurrent: funcref( 's:SetCurrent' ),
       \ SetColumns: funcref( 's:SetColumns' ),
@@ -131,7 +131,7 @@ function! s:Show() dict
    " one.
    
    let current = s:number_or( self._vx_options.current, 0 )
-   let columns = s:number_or( sel_vx_options.columns, 1 )
+   let columns = s:number_or( self._vx_options.columns, 1 )
    let keymaps = s:list_or( self._vx_options.keymaps, [s:list_keymap] )
    let p_options = self._popup_options
 
@@ -209,50 +209,55 @@ function! s:get_column_widths( items, numcols, maxwidth )
 endfunc
 
 function! s:chooser_global_to_displayed( globalIndex ) dict
-   if self.matchertext == ""
+   if self._state.matchertext == ""
       return a:globalIndex
    endif
-   if len(self.matched) == 0
+   if len(self._state.matched) == 0
       return -1
    endif
-   for idx in self.matched
+   for idx in self._state.matched
       if idx >= a:globalIndex
          return idx
       endif
    endfor
-   return self.matched[-1]
+   return self._state.matched[-1]
 endfunc
 
 function! s:chooser_displayed_to_global( visibleIndex ) dict
-   if self.matchertext == ""
+   if self._state.matchertext == ""
       return a:visibleIndex
    endif
-   if len(self.matched) == 0 || a:visibleIndex >= len(self.matched)
+   if len(self._state.matched) == 0 || a:visibleIndex >= len(self._state.matched)
       return -1
    endif
-   return self.matched[a:visibleIndex]
+   return self._state.matched[a:visibleIndex]
 endfunc
 
 " Set the content of the popup list to the items that match the matchertext.
 function! s:chooser_update_displayed() dict
    let items = []
    let matched = []
-   let match_expr = self.matchertext
+   let match_expr = self._state.matchertext
    if match_expr == ""
-      let self.matched = matched
+      let self._state.matched = matched
       call popup_settext( self.windowid, self.content )
    else
-      call self.matcher.set_selector( match_expr )
+      call self._state.matcher.set_selector( match_expr )
       let idx = 0
       for it in self.content
-         if self.matcher.item_matches( it )
+         if self._state.matcher.item_matches( it )
             call add( items, it )
             call add( matched, idx )
          endif
          let idx += 1
       endfor
-      let self.matched = matched
+      let self._state.matched = matched
       call popup_settext( self.windowid, items )
    endif
 endfunc
 
+function! vxlib#chooser#Test()
+   let chooser = vxlib#chooser#Create( ["Item A", "Item B", "Item C"], 
+            \ #{ title: "Abc" } )
+   call chooser.Show()
+endfunc
