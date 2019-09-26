@@ -95,13 +95,13 @@ function! vxlib#chooser#Create( items, popup_options )
       \    matched: []
       \    },
       \ content: a:items,
-      \ SetKeymaps: funcref( 's:SetKeymaps' ),
-      \ SetMatcher: funcref( 's:SetMatcher' ),
-      \ SetMatcherText: funcref( 's:SetMatcherText' ),
-      \ GetCurrentIndex: funcref( 's:GetCurrentIndex' ),
-      \ SetCurrentIndex: funcref( 's:SetCurrentIndex' ),
-      \ Show: funcref( 's:Show' ),
-      \ Close: funcref( 's:Close' ),
+      \ SetKeymaps: funcref( 's:chooser_set_keymaps' ),
+      \ SetMatcher: funcref( 's:chooser_set_matcher' ),
+      \ SetMatcherText: funcref( 's:chooser_set_matcher_text' ),
+      \ GetCurrentIndex: funcref( 's:chooser_get_current_index' ),
+      \ SetCurrentIndex: funcref( 's:chooser_set_current_index' ),
+      \ Show: funcref( 's:chooser_show' ),
+      \ Close: funcref( 's:chooser_close' ),
       \ _update_displayed: funcref( 's:chooser_update_displayed' ),
       \ _displayed_to_global: funcref( 's:chooser_displayed_to_global' ),
       \ _global_to_displayed: funcref( 's:chooser_global_to_displayed' ),
@@ -112,29 +112,29 @@ endfunc
 
 " Set the keymaps that will be used in this chooser. If no keymaps are set
 " the default will be used.
-function! s:SetKeymaps( keymaps ) dict
+function! s:chooser_set_keymaps( keymaps ) dict
    let self._state.keymaps = a:keymaps
 endfunc
 
 " Set the input text for the matcher.
-function! s:SetMatcherText( text ) dict
+function! s:chooser_set_matcher_text( text ) dict
    let self._state.matchertext = a:text
    " TODO: update displayed
 endfunc
 
 " A matcher is an object that is called to narrow the list of displayed items
 " to the ones that match the matcher text according to the matcher.
-function! s:SetMatcher( matcherObj ) dict
+function! s:chooser_set_matcher( matcherObj ) dict
    let self._state.matcher = a:matcherObj
    " TODO: update displayed
 endfunc
 
-function! s:GetCurrentIndex() dict
+function! s:chooser_get_current_index() dict
    let curidx = line( '.', self.windowid ) - 1
    return self._displayed_to_global( curidx )
 endfunc
 
-function! s:SetCurrentIndex( itemIndex ) dict
+function! s:chooser_set_current_index( itemIndex ) dict
    let index = self._global_to_displayed( a:itemIndex )
    call win_execute( self.windowid, ":" . (index + 1) )
 endfunc
@@ -143,7 +143,7 @@ endfunc
 " Display the chooser.  A new popup window is created from the information
 " stored in the chooser object.  The object is set as a window-local variable.
 " Returns: the window id of the newly created window.
-function! s:Show() dict
+function! s:chooser_show() dict
    " TODO: if the window self.windowid already exists and self is also a local
    " variable of that window, activate that window instead of creating a new
    " one.
@@ -199,8 +199,9 @@ function! s:Show() dict
    return winid
 endfunc
 
-function! s:Close() dict
+function! s:chooser_close() dict
    call popup_close( self.windowid )
+   unlet self.windowid
    " TODO: close all child windows
 endfunc
 
