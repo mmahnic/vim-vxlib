@@ -18,7 +18,8 @@ function! vxlib#popup#Create(type, parent)
             \ _win: #{
             \    id: -1,
             \    type: a:type,
-            \    parent: a:parent 
+            \    parent: a:parent,
+            \    onPositionChanged: []
             \    },
             \ GetParentState: funcref( 's:popup_get_parent_state' ),
             \ Show: funcref( 's:popup_show' ),
@@ -67,6 +68,14 @@ function! vxlib#popup#Extend(popup, extra)
       endif
       let a:popup[name] = a:extra[name]
    endfor
+   if has_key( a:popup, '_vx_options' )
+      let vx = a:popup._vx_options
+      if has_key( vx, 'onpositionchanged' )
+         let a:popup._win.onPositionChanged += vx.onpositionchanged
+      endif
+   endif
+endfunc
+
 function! vxlib#popup#ForwardKeyToParent( winid, key )
    try
       let popup = vxlib#popup#GetState( a:winid )
@@ -89,6 +98,25 @@ function! vxlib#popup#ForwardKeyToParent( winid, key )
    endif
 endfunc
 
+function! vxlib#popup#SetText( winid, content )
+   let state = popup_getpos( a:winid )
+   try
+      call popup_settext( a:winid, a:content )
+      let newstate = popup_getpos( a:winid )
+
+      if !empty(state) && !empty(newstate)
+         if state.line != newstate.line || state.col != newstate.col
+                  \ || state.width != newstate.width || state.height != newstate.height
+            let popup = vxlib#popup#GetState( a:winid )
+            if !empty(popup) && !empty(popup._win.onPositionChanged)
+               for OnPosChanged in popup._win.onPositionChanged
+                  call OnPosChanged( popup )
+               endfor
+            endif
+         endif
+      endif
+   catch /.*/
+   endtry
 endfunc
 
 function! s:popup_show() dict
