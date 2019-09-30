@@ -11,14 +11,16 @@ if vxlib#load#IsLoaded( '#vxlib#chooser' )
 endif
 call vxlib#load#SetLoaded( '#vxlib#chooser', 1 )
 
+let s:WT_CHOOSER = 'chooser'
+
 let s:list_keymap = {
          \ 'j': { win -> vxlib#keymap#down( win ) },
-         \ 'k': { win -> vxlib#keymap#up( win ) },
-         \ 'h': { win -> vxlib#keymap#scroll_left( win ) },
-         \ 'l': { win -> vxlib#keymap#scroll_right( win ) },
-         \ 'n': { win -> vxlib#keymap#page_down( win ) },
-         \ 'p': { win -> vxlib#keymap#page_up( win ) },
-         \ 'f': { win -> s:popup_filter( win ) },
+      \ 'k': { win -> vxlib#keymap#up( win ) },
+      \ 'h': { win -> vxlib#keymap#scroll_left( win ) },
+      \ 'l': { win -> vxlib#keymap#scroll_right( win ) },
+      \ 'n': { win -> vxlib#keymap#page_down( win ) },
+      \ 'p': { win -> vxlib#keymap#page_up( win ) },
+      \ 'f': { win -> s:start_chooser_filter( win ) },
          \ "\<esc>" : { win -> popup_close( win ) }
          \ }
 
@@ -71,10 +73,12 @@ function! vxlib#chooser#Create( items, popup_options )
    "    indices of displayed items are in .matched
    " visible: the visible part of the list
 
-   let chooser = vxlib#popup#Create( 'chooser', 0 )
+   let chooser = vxlib#popup#Create( s:WT_CHOOSER, 0 )
    call vxlib#popup#Extend( chooser, #{
       \ _popup_options: a:popup_options,
-      \ _vx_options: vx,
+      \ _vx_options: extend( vx, #{
+      \    onpositionchanged: [ { popup -> s:on_chooser_pos_changed( popup ) } ]
+      \    } ),
       \ _state: #{
       \    keymaps: keymaps,
       \    columns: columns,
@@ -82,6 +86,7 @@ function! vxlib#chooser#Create( items, popup_options )
       \    matchertext: matchertext,
       \    matched: []
       \    },
+      \ _childs: {},
       \ content: a:items,
       \ SetKeymaps: funcref( 's:chooser_set_keymaps' ),
       \ SetMatcher: funcref( 's:chooser_set_matcher' ),
@@ -100,7 +105,19 @@ function! vxlib#chooser#Create( items, popup_options )
    if has_key( p_options, 'maxwidth' ) && p_options.maxwidth < maxwidth
       let maxwidth = p_options.maxwidth
    endif
+   if maxwidth < 12
+      let maxwidth = 12
+   endif
    let p_options.maxwidth = maxwidth
+
+   let minwidth = 12
+   if has_key( p_options, 'minwidth' ) && p_options.minwidth > minwidth
+      let minwidth = p_options.minwidth
+   endif
+   if minwidth > maxwidth
+      let minwidth = maxwidth
+   endif
+   let p_options.minwidth = minwidth
 
    let maxheight = &lines - 6
    if has_key( p_options, 'maxheight' ) && p_options.maxheight < maxheight
@@ -108,17 +125,17 @@ function! vxlib#chooser#Create( items, popup_options )
    endif
    let p_options.maxheight = maxheight
 
-   let p_options.wrap = 0
-
    let p_options.filter = { win, key -> vxlib#keymap#key_filter( win, key, chooser._state.keymaps ) }
    let p_options.cursorline = 1
    let p_options.hidden = 1
    let p_options.border = []
    let p_options.padding = [0, 1, 0, 1]
    let p_options.mapping = 0
+   let p_options.wrap = 0
 
    let chooser = vxlib#popup#Instantiate( chooser, "", p_options )
    call chooser._update_displayed()
+   let chooser._childs.filterbox = s:chooser_add_filter_editbox( chooser )
 
    if current > 0
       call chooser.SetCurrentIndex( current )
@@ -141,6 +158,75 @@ function! vxlib#chooser#Create( items, popup_options )
    endif
 
    return chooser
+endfunc
+
+function! s:make_chooser_filter_keymaps()
+   let filter_keymap = {
+            \ "\<esc>" : { win -> s:set_focus_on_parent( win ) },
+            \ "\<tab>" : { win -> s:set_focus_on_parent( win ) },
+            \ "\<cr>" : { win -> vxlib#popup#ForwardKeyToParent( win, "\<cr>" ) }
+            \ }
+   return [ filter_keymap ]
+endfunc
+
+function! s:set_focus_on_parent( winid )
+   " TODO: Introduce focus management. Until then the parent is focused by
+   " hiding the only child.
+   let ctrl = vxlib#popup#GetState( a:winid )
+   if !empty(ctrl)
+      call ctrl.Hide()
+   endif
+endfunc
+
+function! s:start_chooser_filter( winid )
+   let chooser = vxlib#popup#GetState( a:winid )
+   if empty(chooser) || chooser._win.type != s:WT_CHOOSER
+      call popup_notification( 'The window is not a chooser.', {} )
+      return
+   endif
+   call chooser._childs.filterbox.Show()
+endfunc
+
+function! s:on_filter_text_changed( chooser, text )
+   let a:chooser._state.matchertext = a:text
+   call a:chooser._update_displayed()
+endfunc
+
+function! s:calc_filter_editbox_position( chooser_pos )
+   let basepos = a:chooser_pos
+   return #{
+            \ line: basepos.line + basepos.height - 1,
+            \ col: basepos.col + 2 ,
+            \ width: basepos.width > 32 ? 28 : basepos.width - 4,
+            \ maxwidth: basepos.width - 4,
+            \ minwidth: basepos.width > 16 ? 12 : basepos.width - 4,
+            \ }
+endfunc
+
+function! s:on_chooser_pos_changed( popup )
+   try
+      let ctrl = a:popup._childs.filterbox
+      let basepos = popup_getpos( a:popup._win.id )
+      call popup_move( ctrl._win.id, s:calc_filter_editbox_position( basepos ) )
+   catch /.*/
+   endtry
+endfunc
+
+function! s:chooser_add_filter_editbox( chooser )
+   let parentid = a:chooser._win.id
+   let basepos = popup_getpos( parentid )
+   let baseopts = popup_getoptions( parentid )
+   let content = a:chooser._state.matchertext
+
+   let filterbox = vxlib#editbox#Create( content, extend( #{
+            \ vx: #{
+            \      keymaps: s:make_chooser_filter_keymaps(),
+            \      ontextchanged: [ { edit, text -> s:on_filter_text_changed( a:chooser, text ) } ],
+            \      },
+            \ }, s:calc_filter_editbox_position( basepos ) ),
+            \ parentid )
+
+   return filterbox
 endfunc
 
 " Set the keymaps that will be used in this chooser. If no keymaps are set
@@ -220,7 +306,7 @@ function! s:chooser_update_displayed() dict
    let match_expr = self._state.matchertext
    if match_expr == ""
       let self._state.matched = matched
-      call popup_settext( self._win.id, self.content )
+      call vxlib#popup#SetText( self._win.id, self.content )
    else
       call self._state.matcher.set_selector( match_expr )
       let idx = 0
@@ -232,7 +318,7 @@ function! s:chooser_update_displayed() dict
          let idx += 1
       endfor
       let self._state.matched = matched
-      call popup_settext( self._win.id, items )
+      call vxlib#popup#SetText( self._win.id, items )
    endif
 endfunc
 
