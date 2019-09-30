@@ -22,6 +22,7 @@ function! vxlib#popup#Create(type, parent)
             \    },
             \ GetParentState: funcref( 's:popup_get_parent_state' ),
             \ Show: funcref( 's:popup_show' ),
+            \ Hide: funcref( 's:popup_hide' ),
             \ Close: funcref( 's:popup_close' ),
             \ }
    return l:popup
@@ -70,6 +71,10 @@ endfunc
 
 function! s:popup_show() dict
    call popup_show( self._win.id )
+endfunc
+
+function! s:popup_hide() dict
+   call popup_hide( self._win.id )
 endfunc
 
 function! s:popup_get_parent_state() dict
