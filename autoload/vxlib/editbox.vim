@@ -11,15 +11,12 @@ if vxlib#load#IsLoaded( '#vimuiex#editbox' )
 endif
 call vxlib#load#SetLoaded( '#vimuiex#editbox', 1 )
 
-" The name of the window varible where the editbox object is stored.
-let s:EDITBOXVAR = "vxlib_textedit"
-
-let s:editbox_keymap = {
-         \ "\<esc>" : { win -> popup_close( win ) },
-         \ "\<tab>" : { win -> popup_close( win ) },
-         \ "\<backspace>" : { win -> s:editboxwin_remove_char( win ) },
-         \ "\<cr>" : { win -> s:editboxwin_forward_key_to_parent( win, "\<cr>" ) }
-         \ }
+"let s:editbox_keymap = {
+"         \ "\<esc>" : { win -> popup_close( win ) },
+"         \ "\<tab>" : { win -> popup_close( win ) },
+"         \ "\<backspace>" : { win -> s:editboxwin_remove_char( win ) },
+"         \ "\<cr>" : { win -> s:editboxwin_forward_key_to_parent( win, "\<cr>" ) }
+"         \ }
 let s:editbox_keymap = {
          \ "\<backspace>" : { win -> s:editboxwin_remove_char( win ) },
          \ }
