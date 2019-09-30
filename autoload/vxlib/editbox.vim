@@ -11,6 +11,8 @@ if vxlib#load#IsLoaded( '#vimuiex#editbox' )
 endif
 call vxlib#load#SetLoaded( '#vimuiex#editbox', 1 )
 
+let s:WT_EDITBOX = 'editbox'
+
 "let s:editbox_keymap = {
 "         \ "\<esc>" : { win -> popup_close( win ) },
 "         \ "\<tab>" : { win -> popup_close( win ) },
@@ -35,26 +37,6 @@ function! s:make_editbox_keymaps()
    "    }
 endfunc
 
-"function! s:popup_filter( lstwinid )
-"   let basepos = popup_getpos( a:lstwinid )
-"   let baseopts = popup_getoptions( a:lstwinid )
-"   let vxlist = getwinvar( a:lstwinid, "vxpopup_list" )
-"   let content = type(vxlist) == v:t_dict ? vxlist.selector : ""
-"   let keymaps = [s:editbox_keymap, { win, key -> s:editbox_append_text( win, key ) }]
-"   let fltid = popup_create( content, #{
-"            \ filter:  { win, key -> vimuiex#vxpopup#key_filter( win, key, keymaps ) },
-"            \ line: basepos.line + basepos.height - 1,
-"            \ col: basepos.col + 2 ,
-"            \ height: 1,
-"            \ width: basepos.width > 32 ? 28 : basepos.width - 4,
-"            \ maxwidth: basepos.width - 4,
-"            \ minwidth: basepos.width > 16 ? 12 : basepos.width - 4,
-"            \ wrap: 0,
-"            \ zindex: baseopts.zindex + 1
-"            \ } )
-"   call setwinvar( fltid, "vxpopup_filter", #{ parent: a:lstwinid } )
-"endfunc
-
 " @p parent is the parent popup window (window-id)
 function! vxlib#editbox#Create( content, popup_options, parent )
    let vx = get( a:popup_options, 'vx', {} )
@@ -63,7 +45,7 @@ function! vxlib#editbox#Create( content, popup_options, parent )
    " Emitted when self.text changes. handler( editbox, text ).
    let onTextChanged = get( vx, 'ontextchanged', [] )
 
-   let editbox = vxlib#popup#Create( 'editbox', a:parent )
+   let editbox = vxlib#popup#Create( s:WT_EDITBOX, a:parent )
    call vxlib#popup#Extend( editbox, #{
       \ _popup_options: a:popup_options,
       \ _vx_options: vx,
@@ -148,44 +130,6 @@ function! s:editboxwin_remove_char( winid )
       call s:editbox_emit_text_changed( editbox )
    endif
 endfunc
-
-function! s:editboxwin_forward_key_to_parent( winid, key )
-   try
-      let editbox = vxlib#popup#GetState( a:winid )
-      let parent = editbox.GetParentState()
-      let parentid = parent._win.id
-   catch /.*/
-      return
-   endtry
-
-   let options = popup_getoptions( parentid )
-   if has_key( options, 'filter' ) && type( options.filter ) == v:t_func
-      let F = options.filter
-      call F( vxlist.windowid, a:key )
-
-      " close the filter if the parent closes; TODO: should this be done by
-      " the parent?
-      let options = popup_getoptions( parentid )
-      if empty(options)
-         call self.Close()
-      endif
-   endif
-endfunc
-
-"function! s:editbox_update_position( fltwinid, lstwinid )
-"   let basepos = popup_getpos( a:lstwinid )
-"   let baseopts = popup_getoptions( a:lstwinid )
-"   call popup_move( a:fltwinid, #{ 
-"            \ line: basepos.line + basepos.height - 1,
-"            \ col: basepos.col + 2 ,
-"            \ height: 1,
-"            \ width: basepos.width > 32 ? 28 : basepos.width - 4,
-"            \ maxwidth: basepos.width - 4,
-"            \ minwidth: basepos.width > 16 ? 12 : basepos.width - 4,
-"            \ wrap: 0,
-"            \ zindex: baseopts.zindex + 1
-"            \ })
-"endfunc
 
 function! vxlib#editbox#Test()
    let editbox = vxlib#editbox#Create( 'Test',
