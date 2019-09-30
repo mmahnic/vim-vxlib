@@ -28,6 +28,12 @@ function! vxlib#popup#Create(type, parent)
 endfunc
 
 function! vxlib#popup#Instantiate( popup, content, options )
+   if !has_key( a:options, 'zindex' ) && a:popup._win.parent > 0
+      let parentopts = popup_getoptions( a:popup._win.parent )
+      if has_key( parentopts, 'zindex' )
+         let a:options.zindex = parentopts.zindex + 1
+      endif
+   endif
    let winid = popup_create( a:content, a:options )
    let a:popup._win.id = winid
    call setwinvar( winid, s:POPUVAR, a:popup )
