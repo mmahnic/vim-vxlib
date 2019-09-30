@@ -11,9 +11,6 @@ if vxlib#load#IsLoaded( '#vxlib#chooser' )
 endif
 call vxlib#load#SetLoaded( '#vxlib#chooser', 1 )
 
-" The name of the window varible where the chooser object is stored.
-let s:CHOOSERVAR = 'vxlib_chooser'
-
 let s:list_keymap = {
          \ 'j': { win -> vxlib#keymap#down( win ) },
          \ 'k': { win -> vxlib#keymap#up( win ) },
@@ -41,8 +38,8 @@ function! s:list_or( dict, name, default )
    return val
 endfunc
 
-function! s:make_list_keymap()
-   return s:list_keymap
+function! s:make_chooser_keymaps()
+   return [ s:list_keymap ]
    " TODO: prepare the keymap from user settings:
    " call vxlib#chooser#SetDefaultKeys = #{
    "    up: [ 'k', "\<up>" ], down: [ 'j', "\<down>" ],
@@ -54,18 +51,8 @@ function! s:make_list_keymap()
    "    }
 endfunc
 
-" Get a chooser object from the window a:windowid.  Returns 0 if the window or
-" the variable does not exist.
-function! vxlib#chooser#GetWinVar( windowid )
-   let chooser = getwinvar( a:windowid, s:CHOOSERVAR )
-   if type( chooser ) != v:t_dict
-      return 0
-   endif
-   return chooser
-endfunc
-
 " Create a chooser object for choosing one or more items from a:items and
-" perfomr operations on them.  The a:popup_options will be passed to
+" perform operations on them.  The a:popup_options will be passed to
 " popup_create().  
 "
 " Options filter, cursorline, hidden and wrap are ignored in a:popup_options.
@@ -75,7 +62,7 @@ function! vxlib#chooser#Create( items, popup_options )
 
    let matcher = get( vx, 'matcher', vxlib#matcher#CreateWordMatcher() )
    let matchertext = get( vx, 'matchertext', '' )
-   let keymaps = get( vx, 'keymaps', [] ) + [s:make_list_keymap()]
+   let keymaps = get( vx, 'keymaps', [] ) + s:make_chooser_keymaps()
    let columns = s:number_or( vx, 'columns', 1 )
 
    " global -> displayed -> visible
@@ -84,7 +71,8 @@ function! vxlib#chooser#Create( items, popup_options )
    "    indices of displayed items are in .matched
    " visible: the visible part of the list
 
-   let chooser = #{
+   let chooser = vxlib#popup#Create( 'chooser', 0 )
+   call vxlib#popup#Extend( chooser, #{
       \ _popup_options: a:popup_options,
       \ _vx_options: vx,
       \ _state: #{
@@ -100,12 +88,57 @@ function! vxlib#chooser#Create( items, popup_options )
       \ SetMatcherText: funcref( 's:chooser_set_matcher_text' ),
       \ GetCurrentIndex: funcref( 's:chooser_get_current_index' ),
       \ SetCurrentIndex: funcref( 's:chooser_set_current_index' ),
-      \ Show: funcref( 's:chooser_show' ),
-      \ Close: funcref( 's:chooser_close' ),
       \ _update_displayed: funcref( 's:chooser_update_displayed' ),
       \ _displayed_to_global: funcref( 's:chooser_displayed_to_global' ),
       \ _global_to_displayed: funcref( 's:chooser_global_to_displayed' ),
-      \ }
+      \ } )
+
+   let current = s:number_or( vx, 'current', 0 )
+   let p_options = chooser._popup_options
+
+   let maxwidth = &columns - 6
+   if has_key( p_options, 'maxwidth' ) && p_options.maxwidth < maxwidth
+      let maxwidth = p_options.maxwidth
+   endif
+   let p_options.maxwidth = maxwidth
+
+   let maxheight = &lines - 6
+   if has_key( p_options, 'maxheight' ) && p_options.maxheight < maxheight
+      let maxheight = p_options.maxheight
+   endif
+   let p_options.maxheight = maxheight
+
+   let p_options.wrap = 0
+
+   let p_options.filter = { win, key -> vxlib#keymap#key_filter( win, key, chooser._state.keymaps ) }
+   let p_options.cursorline = 1
+   let p_options.hidden = 1
+   let p_options.border = []
+   let p_options.padding = [0, 1, 0, 1]
+   let p_options.mapping = 0
+
+   let chooser = vxlib#popup#Instantiate( chooser, "", p_options )
+   call chooser._update_displayed()
+
+   if current > 0
+      call chooser.SetCurrentIndex( current )
+   endif
+
+   if chooser._state.columns > 1
+      " The actual width of the window depends on the visible items and its
+      " use is unreliable for limiting the column width. We depend on maxwidth
+      " and &columns, instead.
+      if has_key(p_options, 'maxwidth')
+         let maxcolwidth = p_options.maxwidth / 3
+      else
+         let maxcolwidth = &columns / 3
+      endif
+      if maxcolwidth < 8
+         let maxcolwidth = 8
+      endif
+      let colwidths = s:get_column_widths( chooser.content, chooser._state.columns, maxcolwidth )
+      call win_execute( chooser._win.id, 'setlocal vartabstop=' . join( colwidths, ',' ) )
+   endif
 
    return chooser
 endfunc
@@ -130,79 +163,13 @@ function! s:chooser_set_matcher( matcherObj ) dict
 endfunc
 
 function! s:chooser_get_current_index() dict
-   let curidx = line( '.', self.windowid ) - 1
+   let curidx = line( '.', self._win.id ) - 1
    return self._displayed_to_global( curidx )
 endfunc
 
 function! s:chooser_set_current_index( itemIndex ) dict
    let index = self._global_to_displayed( a:itemIndex )
-   call win_execute( self.windowid, ":" . (index + 1) )
-endfunc
-
-
-" Display the chooser.  A new popup window is created from the information
-" stored in the chooser object.  The object is set as a window-local variable.
-" Returns: the window id of the newly created window.
-function! s:chooser_show() dict
-   " TODO: if the window self.windowid already exists and self is also a local
-   " variable of that window, activate that window instead of creating a new
-   " one.
-   
-   let vx = self._vx_options
-   let current = s:number_or( vx, 'current', 0 )
-   let p_options = self._popup_options
-
-   let maxwidth = &columns - 6
-   if has_key( p_options, 'maxwidth' ) && p_options.maxwidth < maxwidth
-      let maxwidth = p_options.maxwidth
-   endif
-   let p_options.maxwidth = maxwidth
-
-   let maxheight = &lines - 6
-   if has_key( p_options, 'maxheight' ) && p_options.maxheight < maxheight
-      let maxheight = p_options.maxheight
-   endif
-   let p_options.maxheight = maxheight
-
-   let p_options.wrap = 0
-
-   let p_options.filter = { win, key -> vxlib#keymap#key_filter( win, key, self._state.keymaps ) }
-   let p_options.cursorline = 1
-   let p_options.hidden = 1
-   let winid = popup_dialog( '', p_options )
-   let self.windowid = winid
-   call setwinvar( winid, s:CHOOSERVAR, self )
-
-   call self._update_displayed()
-
-   if current > 0
-      call self.SetCurrentIndex( current )
-   endif
-
-   if self._state.columns > 1
-      " The actual width of the window depends on the visible items and its
-      " use is unreliable for limiting the column width. We depend on maxwidth
-      " and &columns, instead.
-      if has_key(p_options, 'maxwidth')
-         let maxcolwidth = p_options.maxwidth / 3
-      else
-         let maxcolwidth = &columns / 3
-      endif
-      if maxcolwidth < 8
-         let maxcolwidth = 8
-      endif
-      let colwidths = s:get_column_widths( self.content, self._state.columns, maxcolwidth )
-      call win_execute( winid, 'setlocal vartabstop=' . join( colwidths, ',' ) )
-   endif
-
-   call popup_show( winid )
-   return winid
-endfunc
-
-function! s:chooser_close() dict
-   call popup_close( self.windowid )
-   unlet self.windowid
-   " TODO: close all child windows
+   call win_execute( self._win.id, ":" . (index + 1) )
 endfunc
 
 function! s:get_column_widths( items, numcols, maxwidth )
@@ -253,7 +220,7 @@ function! s:chooser_update_displayed() dict
    let match_expr = self._state.matchertext
    if match_expr == ""
       let self._state.matched = matched
-      call popup_settext( self.windowid, self.content )
+      call popup_settext( self._win.id, self.content )
    else
       call self._state.matcher.set_selector( match_expr )
       let idx = 0
@@ -265,14 +232,15 @@ function! s:chooser_update_displayed() dict
          let idx += 1
       endfor
       let self._state.matched = matched
-      call popup_settext( self.windowid, items )
+      call popup_settext( self._win.id, items )
    endif
 endfunc
 
 function! vxlib#chooser#Test()
-   let chooser = vxlib#chooser#Create( ["Item A", "Item B", "Item C"], 
+   let chooser = vxlib#chooser#Create( ["Item A\tFirst", "Item B\tSecond", "Item C\tThird",
+            \ "The last item\tFourth" ],
             \ #{ title: "Abc",
-            \    vx: #{ current: 1, columns: 1 }
+            \    vx: #{ current: 1, columns: 2 }
             \ } )
    call chooser.Show()
 endfunc
