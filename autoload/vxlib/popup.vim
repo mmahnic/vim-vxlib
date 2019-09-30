@@ -67,6 +67,28 @@ function! vxlib#popup#Extend(popup, extra)
       endif
       let a:popup[name] = a:extra[name]
    endfor
+function! vxlib#popup#ForwardKeyToParent( winid, key )
+   try
+      let popup = vxlib#popup#GetState( a:winid )
+      let parentid = popup._win.parent
+      let options = popup_getoptions( parentid )
+   catch /.*/
+      return
+   endtry
+
+   if has_key( options, 'filter' ) && type( options.filter ) == v:t_func
+      let F = options.filter
+      call F( parentid, a:key )
+
+      " close the child if the parent closes; TODO: should this be done by
+      " the parent?
+      let options = popup_getoptions( parentid )
+      if empty(options)
+         call popup.Close()
+      endif
+   endif
+endfunc
+
 endfunc
 
 function! s:popup_show() dict
