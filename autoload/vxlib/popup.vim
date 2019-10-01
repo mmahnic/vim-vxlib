@@ -36,6 +36,13 @@ function! vxlib#popup#Instantiate( popup, content, options )
          let a:options.zindex = parentopts.zindex + 1
       endif
    endif
+   if has_key( a:options, 'callback' )
+      let Origcallback = a:options.callback
+   else
+      let Origcallback = { result -> result }
+   endif
+   let a:options.callback = { result -> s:close_children_on_exit( a:popup, result, Origcallback ) }
+
    let winid = popup_create( a:content, a:options )
    let a:popup._win.id = winid
    call setwinvar( winid, s:POPUVAR, a:popup )
@@ -88,13 +95,6 @@ function! vxlib#popup#ForwardKeyToParent( winid, key )
    if has_key( options, 'filter' ) && type( options.filter ) == v:t_func
       let F = options.filter
       call F( parentid, a:key )
-
-      " close the child if the parent closes; TODO: should this be done by
-      " the parent?
-      let options = popup_getoptions( parentid )
-      if empty(options)
-         call popup.Close()
-      endif
    endif
 endfunc
 
@@ -142,4 +142,16 @@ endfunc
 
 function! s:popup_close() dict
    call vxlib#popup#Close( self )
+endfunc
+
+function! s:close_children_on_exit( popup, result, origCallback )
+   if has_key( a:popup, '_childs' )
+      for childname in keys(a:popup._childs)
+         let child = a:popup._childs[childname]
+         unlet a:popup._childs[childname]
+         call vxlib#popup#Close( child )
+      endfor
+   endif
+   let Cb = a:origCallback
+   call Cb( a:result )
 endfunc

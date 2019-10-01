@@ -21,8 +21,8 @@ let s:list_keymap = {
       \ 'n': { win -> vxlib#keymap#page_down( win ) },
       \ 'p': { win -> vxlib#keymap#page_up( win ) },
       \ 'f': { win -> s:start_chooser_filter( win ) },
-         \ "\<esc>" : { win -> popup_close( win ) }
-         \ }
+      \ "\<esc>" : { win -> vxlib#popup#Close( win ) }
+      \ }
 
 function! s:number_or( dict, name, default )
    let val = get( a:dict, a:name, a:default )
