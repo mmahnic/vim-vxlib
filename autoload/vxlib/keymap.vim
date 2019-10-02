@@ -56,27 +56,37 @@ function! vxlib#keymap#key_filter( winid, key, keymaps, actions )
          " Keymap is a filter-like function. If it handles the key (returns
          " true), stop processing further keymaps.
          if Keymap( a:winid, a:key )
-            break
+            return v:true
          endif
       elseif has_key( Keymap, a:key )
          " Keymap is a dictionary and an entry for the key is present in it.
          let FilterFunc = Keymap[a:key]
          if type( FilterFunc ) == v:t_func
+            " call popup_notification( 'Funcref: ' . FilterFunc, #{ time: 500 } )
             call FilterFunc( a:winid )
+            return v:true
          elseif type( FilterFunc ) == v:t_string
             if FilterFunc[:0] == '*'
                if exists( FilterFunc )
+                  " call popup_notification( 'Funcname: ' . FilterFunc, #{ time: 500 } )
                   exec "call " . FilterFunc[1:] . "(" . a:winid . ")"
+                  return v:true
                endif
             elseif has_key( a:actions, FilterFunc )
+               " call popup_notification( 'Action: ' . FilterFunc, #{ time: 500 } )
                let ActionFunc = a:actions[FilterFunc]
                call ActionFunc( a:winid, a:key )
+               return v:true
             endif
+            " call popup_notification( 'Unknown action: ' . FilterFunc, #{ time: 500 } )
+            return v:true
          endif
-         break
+         " call popup_notification( 'Unsupported action type for key ' . a:key, #{ time: 500 } )
+         return v:true
       endif
    endfor
 
+   " call popup_notification( 'Unhandled key: ' . a:key, #{ time: 500 } )
    return v:true
 endfunc
 
