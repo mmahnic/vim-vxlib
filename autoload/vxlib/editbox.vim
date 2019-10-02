@@ -50,10 +50,10 @@ function! vxlib#editbox#Create( content, popup_options, parent )
       \ _popup_options: a:popup_options,
       \ _vx_options: vx,
       \ _state: #{
-      \    keymaps: keymaps,
       \    onTextChanged: onTextChanged,
       \    text: a:content,
       \    },
+      \ _keymaps: keymaps,
       \ MoveWindow: funcref( 's:editbox_move_window' ),
       \ } )
 
@@ -64,7 +64,6 @@ function! vxlib#editbox#Create( content, popup_options, parent )
    let p_options.cursorline = 0
    let p_options.hidden = 1
    let p_options.mapping = 0
-   let p_options.filter = { win, key -> vxlib#keymap#key_filter( win, key, editbox._state.keymaps ) }
 
    let width = get( p_options, 'width', 0 )
    if width < 1

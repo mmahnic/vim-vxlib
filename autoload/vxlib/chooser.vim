@@ -80,12 +80,12 @@ function! vxlib#chooser#Create( items, popup_options )
       \    onpositionchanged: [ { popup -> s:on_chooser_pos_changed( popup ) } ]
       \    } ),
       \ _state: #{
-      \    keymaps: keymaps,
       \    columns: columns,
       \    matcher: matcher,
       \    matchertext: matchertext,
       \    matched: []
       \    },
+      \ _keymaps: keymaps,
       \ content: a:items,
       \ SetKeymaps: funcref( 's:chooser_set_keymaps' ),
       \ SetMatcher: funcref( 's:chooser_set_matcher' ),
@@ -124,7 +124,6 @@ function! vxlib#chooser#Create( items, popup_options )
    endif
    let p_options.maxheight = maxheight
 
-   let p_options.filter = { win, key -> vxlib#keymap#key_filter( win, key, chooser._state.keymaps ) }
    let p_options.cursorline = 1
    let p_options.hidden = 1
    let p_options.border = []
@@ -231,7 +230,7 @@ endfunc
 " Set the keymaps that will be used in this chooser. If no keymaps are set
 " the default will be used.
 function! s:chooser_set_keymaps( keymaps ) dict
-   let self._state.keymaps = a:keymaps
+   let self._keymaps = a:keymaps
 endfunc
 
 " Set the input text for the matcher.

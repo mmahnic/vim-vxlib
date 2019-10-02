@@ -22,6 +22,7 @@ function! vxlib#popup#Create(type, parent)
             \    onPositionChanged: []
             \    },
             \ _childs: {},
+            \ _keymaps: [],
             \ GetParentState: funcref( 's:popup_get_parent_state' ),
             \ Show: funcref( 's:popup_show' ),
             \ Hide: funcref( 's:popup_hide' ),
@@ -37,12 +38,15 @@ function! vxlib#popup#Instantiate( popup, content, options )
          let a:options.zindex = parentopts.zindex + 1
       endif
    endif
+
    if has_key( a:options, 'callback' )
       let Origcallback = a:options.callback
    else
       let Origcallback = { result -> result }
    endif
    let a:options.callback = { result -> s:close_children_on_exit( a:popup, result, Origcallback ) }
+
+   let a:options.filter = { win, key -> vxlib#keymap#key_filter( win, key, a:popup._keymaps ) }
 
    let winid = popup_create( a:content, a:options )
    let a:popup._win.id = winid
