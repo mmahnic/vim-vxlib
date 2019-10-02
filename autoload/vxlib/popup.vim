@@ -21,6 +21,7 @@ function! vxlib#popup#Create(type, parent)
             \    parent: a:parent,
             \    onPositionChanged: []
             \    },
+            \ _childs: {},
             \ GetParentState: funcref( 's:popup_get_parent_state' ),
             \ Show: funcref( 's:popup_show' ),
             \ Hide: funcref( 's:popup_hide' ),

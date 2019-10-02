@@ -86,7 +86,6 @@ function! vxlib#chooser#Create( items, popup_options )
       \    matchertext: matchertext,
       \    matched: []
       \    },
-      \ _childs: {},
       \ content: a:items,
       \ SetKeymaps: funcref( 's:chooser_set_keymaps' ),
       \ SetMatcher: funcref( 's:chooser_set_matcher' ),
