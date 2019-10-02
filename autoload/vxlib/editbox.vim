@@ -14,7 +14,8 @@ call vxlib#load#SetLoaded( '#vimuiex#editbox', 1 )
 let s:WT_EDITBOX = 'editbox'
 
 let s:editbox_actions = #{
-         \ backspace: { win, key -> s:editboxwin_remove_char( win ) }
+         \ backspace: { win, key -> s:editboxwin_remove_char( win ) },
+         \ forward_to_parent : { win, key -> vxlib#popup#ForwardKeyToParent( win, key ) }
          \ }
 
 let s:editbox_keymap = {

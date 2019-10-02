@@ -181,7 +181,7 @@ function! s:make_chooser_filter_keymaps()
    let filter_keymap = {
             \ "\<esc>" : { win -> s:set_focus_on_parent( win ) },
             \ "\<tab>" : { win -> s:set_focus_on_parent( win ) },
-            \ "\<cr>" : { win -> vxlib#popup#ForwardKeyToParent( win, "\<cr>" ) }
+            \ "\<cr>" : 'forward_to_parent'
             \ }
    return [ filter_keymap ]
 endfunc
