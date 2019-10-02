@@ -13,16 +13,29 @@ call vxlib#load#SetLoaded( '#vxlib#chooser', 1 )
 
 let s:WT_CHOOSER = 'chooser'
 
-let s:list_keymap = {
-         \ 'j': { win -> vxlib#keymap#down( win ) },
-      \ 'k': { win -> vxlib#keymap#up( win ) },
-      \ 'h': { win -> vxlib#keymap#scroll_left( win ) },
-      \ 'l': { win -> vxlib#keymap#scroll_right( win ) },
-      \ 'n': { win -> vxlib#keymap#page_down( win ) },
-      \ 'p': { win -> vxlib#keymap#page_up( win ) },
-      \ 'f': { win -> s:start_chooser_filter( win ) },
-      \ "\<esc>" : { win -> vxlib#popup#Close( win ) }
-      \ }
+let s:chooser_actions = #{
+         \ down: { win, key -> vxlib#keymap#down( win ) },
+         \ up: { win, key -> vxlib#keymap#up( win ) },
+         \ scroll_left: { win, key -> vxlib#keymap#scroll_left( win ) },
+         \ scroll_right: { win, key -> vxlib#keymap#scroll_right( win ) },
+         \ page_down: { win, key -> vxlib#keymap#page_down( win ) },
+         \ page_up: { win, key -> vxlib#keymap#page_up( win ) },
+         \ start_filter: { win, key -> s:start_chooser_filter( win ) },
+         \ accept : { win, key -> vxlib#popup#Close( win ) },
+         \ close : { win, key -> vxlib#popup#Close( win ) }
+         \ }
+
+let s:chooser_keymap = {
+         \ 'j': 'down',
+         \ 'k': 'up',
+         \ 'h': 'scroll_left',
+         \ 'l': 'scroll_right',
+         \ 'n': 'page_down',
+         \ 'p': 'page_up',
+         \ 'f': 'start_filter',
+         \ "\<cr>" : 'accept',
+         \ "\<esc>" : 'close'
+         \ }
 
 function! s:number_or( dict, name, default )
    let val = get( a:dict, a:name, a:default )
@@ -41,7 +54,7 @@ function! s:list_or( dict, name, default )
 endfunc
 
 function! s:make_chooser_keymaps()
-   return [ s:list_keymap ]
+   return [ s:chooser_keymap ]
    " TODO: prepare the keymap from user settings:
    " call vxlib#chooser#SetDefaultKeys = #{
    "    up: [ 'k', "\<up>" ], down: [ 'j', "\<down>" ],
@@ -51,6 +64,10 @@ function! s:make_chooser_keymaps()
    " call vxlib#chooser#SetDefaultActions = #{
    "    up: { win -> vxlib#keymap#up( win ) }
    "    }
+endfunc
+
+function! s:make_chooser_actions()
+   return copy(s:chooser_actions)
 endfunc
 
 " Create a chooser object for choosing one or more items from a:items and
@@ -65,6 +82,7 @@ function! vxlib#chooser#Create( items, popup_options )
    let matcher = get( vx, 'matcher', vxlib#matcher#CreateWordMatcher() )
    let matchertext = get( vx, 'matchertext', '' )
    let keymaps = get( vx, 'keymaps', [] ) + s:make_chooser_keymaps()
+   let actions = extend( s:make_chooser_actions(), get( vx, 'actions', {} ) )
    let columns = s:number_or( vx, 'columns', 1 )
 
    " global -> displayed -> visible
@@ -86,6 +104,7 @@ function! vxlib#chooser#Create( items, popup_options )
       \    matched: []
       \    },
       \ _keymaps: keymaps,
+      \ _actions: actions,
       \ content: a:items,
       \ SetKeymaps: funcref( 's:chooser_set_keymaps' ),
       \ SetMatcher: funcref( 's:chooser_set_matcher' ),

@@ -13,14 +13,12 @@ call vxlib#load#SetLoaded( '#vimuiex#editbox', 1 )
 
 let s:WT_EDITBOX = 'editbox'
 
-"let s:editbox_keymap = {
-"         \ "\<esc>" : { win -> popup_close( win ) },
-"         \ "\<tab>" : { win -> popup_close( win ) },
-"         \ "\<backspace>" : { win -> s:editboxwin_remove_char( win ) },
-"         \ "\<cr>" : { win -> s:editboxwin_forward_key_to_parent( win, "\<cr>" ) }
-"         \ }
+let s:editbox_actions = #{
+         \ backspace: { win, key -> s:editboxwin_remove_char( win ) }
+         \ }
+
 let s:editbox_keymap = {
-         \ "\<backspace>" : { win -> s:editboxwin_remove_char( win ) },
+         \ "\<backspace>" : 'backspace',
          \ }
 
 function! s:make_editbox_keymaps()
@@ -37,10 +35,15 @@ function! s:make_editbox_keymaps()
    "    }
 endfunc
 
+function! s:make_editbox_actions()
+   return copy(s:editbox_actions)
+endfunc
+
 " @p parent is the parent popup window (window-id)
 function! vxlib#editbox#Create( content, popup_options, parent )
    let vx = get( a:popup_options, 'vx', {} )
    let keymaps = get( vx, 'keymaps', [] ) + s:make_editbox_keymaps()
+   let actions = extend( s:make_editbox_actions(), get( vx, 'actions', {} ) )
 
    " Emitted when self.text changes. handler( editbox, text ).
    let onTextChanged = get( vx, 'ontextchanged', [] )
@@ -54,6 +57,7 @@ function! vxlib#editbox#Create( content, popup_options, parent )
       \    text: a:content,
       \    },
       \ _keymaps: keymaps,
+      \ _actions: actions,
       \ MoveWindow: funcref( 's:editbox_move_window' ),
       \ } )
 
