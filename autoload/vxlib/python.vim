@@ -23,11 +23,11 @@ call vxlib#load#SetLoaded( '#vxlib#python', 'DEPRECATED' )
 " Add ~/.vim/modpython to python search path.
 " Vim-python modules should be installed in ~/.vim/modpython
 function! vxlib#python#prepare()
-   if has('python') && !exists('s:pypath')
+   if has('python3') && !exists('s:pypath')
       let s:pypath = split(globpath(&runtimepath, 'modpython'), "\n")
-      python import sys
+      python3 import sys
       for pth in s:pypath
-         exec "python sys.path.append(r'" . pth . "')"
+         exec "python3 sys.path.append(r'" . pth . "')"
       endfor
       let s:pypath = []
    endif
